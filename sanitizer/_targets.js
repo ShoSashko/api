@@ -27,16 +27,19 @@ function _setup( paramName, targetMap ) {
           messages.errors.push(
             opts.paramName + ' parameter cannot be an empty string. Valid options: ' + getValidKeys(opts.targetMap)
           );
-        }
-        else {
-
+        } else {
           // split string in to array and lowercase each target string
           var targets = targetsString.split(',').map( function( target ){
             return target.toLowerCase(); // lowercase inputs
           });
 
+          const positive_targets = targets.filter((t) => t[0] !== '-' );
+
+          const negative_targets = targets.filter((t) => t[0] === '-' )
+            .map((t) => t.slice(1)); // remove the leading '-' from the negative target so it can be validated easily
+
           // emit an error for each target *not* present in the targetMap
-          targets.filter( function( target ){
+          positive_targets.filter( function( target ){
             return !opts.targetMap.hasOwnProperty(target);
           }).forEach( function( target ){
             messages.errors.push(
@@ -44,9 +47,20 @@ function _setup( paramName, targetMap ) {
             );
           });
 
+          // for calculating the final list of targets use either:
+          // - the list of positive targets, if there are any
+          // - otherwise, the list of all possible targets
+          const effective_positive_targets = positive_targets.length ?
+            positive_targets :
+            Object.keys(opts.targetMap);
+
+          const final_targets = effective_positive_targets.filter((t) => {
+            return !negative_targets.includes(t);
+          });
+
           // only set types value when no error occured
           if( !messages.errors.length ){
-            clean[opts.paramName] = targets.reduce(function(acc, target) {
+            clean[opts.paramName] = final_targets.reduce(function(acc, target) {
               return acc.concat(opts.targetMap[target]);
             }, []);
 

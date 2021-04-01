@@ -124,6 +124,29 @@ module.exports.tests.sanitize_layers = function(test, common) {
     t.deepEqual(clean.layers, expected_layers, 'all layers found (no duplicates)');
     t.end();
   });
+
+  test('positive and negative layers', function(t) {
+    var raw = { layers: 'venue,address,-venue' };
+    var clean = {};
+
+    sanitizer.sanitize(raw, clean);
+
+    var expected_layers = ['address'];
+    t.deepEqual(clean.layers, expected_layers, 'positive layers plus negative layer returns only selected positive layers');
+    t.end();
+  });
+
+  test('only negative layers', function(t) {
+    var raw = { layers: '-venue' };
+    var clean = {};
+
+    sanitizer.sanitize(raw, clean);
+
+    const expected_layers = type_mapping.getCanonicalLayers().filter(layer => layer !== 'venue').sort();
+
+    t.deepEqual(clean.layers.sort(), expected_layers, 'all layers except negative layer selected');
+    t.end();
+  });
 };
 
 module.exports.all = function (tape, common) {
